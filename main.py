@@ -17,6 +17,7 @@ load_dotenv()
 
 TOKEN: Final = os.getenv('TOKEN')
 BOT_USERNAME: Final = os.getenv('BOT_USERNAME')
+API_URL: Final = os.getenv('API_URL')  # Nueva variable para la URL de la API
 
 # Almacenamiento simple de áreas por usuario (en memoria)
 user_areas = {}
@@ -56,7 +57,7 @@ async def myarea_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ No tienes un área configurada. Usa /area <nombre_area> para configurar una.")
 
 async def query_api(question: str, area: str) -> str:
-    url = "http://localhost:8000/query"
+    url = f"{API_URL}/query"  # Usar la URL del .env
     payload = {
         "question": question,
         "area": area,
@@ -122,6 +123,8 @@ if __name__ == "__main__":
         raise ValueError("❌ TOKEN no encontrado en el archivo .env")
     if not BOT_USERNAME:
         raise ValueError("❌ BOT_USERNAME no encontrado en el archivo .env")
+    if not API_URL:
+        raise ValueError("❌ API_URL no encontrado en el archivo .env")  # Nueva validación
     
     print("Iniciando el bot Display")
     app = Application.builder().token(TOKEN).build()
