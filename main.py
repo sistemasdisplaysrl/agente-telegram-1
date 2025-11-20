@@ -17,7 +17,9 @@ load_dotenv()
 
 TOKEN: Final = os.getenv('TOKEN')
 BOT_USERNAME: Final = os.getenv('BOT_USERNAME')
-API_URL: Final = os.getenv('API_URL')  # Nueva variable para la URL de la API
+API_URL: Final = os.getenv('API_URL')
+WEBHOOK_URL: Final = os.getenv('WEBHOOK_URL')  # Nueva variable: tu URL pública (ej: https://tudominio.com)
+PORT: Final = int(os.getenv('PORT', 8443))  # Puerto para el webhook (por defecto 8443)
 
 # Almacenamiento simple de áreas por usuario (en memoria)
 user_areas = {}
@@ -57,7 +59,7 @@ async def myarea_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ No tienes un área configurada. Usa /area <nombre_area> para configurar una.")
 
 async def query_api(question: str, area: str) -> str:
-    url = f"{API_URL}/query"  # Usar la URL del .env
+    url = f"{API_URL}/query"
     payload = {
         "question": question,
         "area": area,
@@ -124,9 +126,11 @@ if __name__ == "__main__":
     if not BOT_USERNAME:
         raise ValueError("❌ BOT_USERNAME no encontrado en el archivo .env")
     if not API_URL:
-        raise ValueError("❌ API_URL no encontrado en el archivo .env")  # Nueva validación
+        raise ValueError("❌ API_URL no encontrado en el archivo .env")
+    if not WEBHOOK_URL:
+        raise ValueError("❌ WEBHOOK_URL no encontrado en el archivo .env")
     
-    print("Iniciando el bot Display")
+    print("Iniciando el bot Display con webhook")
     app = Application.builder().token(TOKEN).build()
 
     # comandos
@@ -141,6 +145,11 @@ if __name__ == "__main__":
     # errores
     app.add_error_handler(error)
 
-    # ! actualizacion cada 3 segundos
-    print("Poolling...")
-    app.run_polling(poll_interval=3)
+    # Configurar y ejecutar webhook
+    print(f"Iniciando webhook en puerto {PORT}...")
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path=TOKEN,
+        webhook_url=f"{WEBHOOK_URL}/{TOKEN}"
+    )
