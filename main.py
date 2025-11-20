@@ -1,5 +1,5 @@
 from typing import Final
-from telegram import Update
+from telegram import Update, Bot
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -7,10 +7,12 @@ from telegram.ext import (
     filters,
     ContextTypes,
 )
+from fastapi import FastAPI, Request
 import aiohttp
 import json
 import os
 from dotenv import load_dotenv
+import uvicorn
 
 # Cargar variables del archivo .env
 load_dotenv()
@@ -18,8 +20,8 @@ load_dotenv()
 TOKEN: Final = os.getenv('TOKEN')
 BOT_USERNAME: Final = os.getenv('BOT_USERNAME')
 API_URL: Final = os.getenv('API_URL')
-WEBHOOK_URL: Final = os.getenv('WEBHOOK_URL')  # Nueva variable: tu URL pública (ej: https://tudominio.com)
-PORT: Final = int(os.getenv('PORT', 8443))  # Puerto para el webhook (por defecto 8443)
+WEBHOOK_URL: Final = os.getenv('WEBHOOK_URL')
+PORT: Final = int(os.getenv('PORT', 8443))
 
 # Almacenamiento simple de áreas por usuario (en memoria)
 user_areas = {}
@@ -119,6 +121,67 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f"{update} causo el error {context.error}")
 
+# Crear la aplicación de Telegram
+ptb_app = Application.builder().token(TOKEN).build()
+
+# Agregar handlers
+ptb_app.add_handler(CommandHandler("start", start_command))
+ptb_app.add_handler(CommandHandler("help", help_command))
+ptb_app.add_handler(CommandHandler("area", area_command))
+ptb_app.add_handler(CommandHandler("myarea", myarea_command))
+ptb_app.add_handler(MessageHandler(filters.TEXT, handle_message))
+ptb_app.add_error_handler(error)
+
+# Crear la aplicación FastAPI
+app = FastAPI(title="Bot Display Webhook")
+
+@app.on_event("startup")
+async def startup():
+    """Inicializar el bot de Telegram al arrancar FastAPI"""
+    await ptb_app.initialize()
+    await ptb_app.start()
+    
+    # Configurar el webhook en Telegram
+    webhook_url = f"{WEBHOOK_URL}/webhook/{TOKEN}"
+    await ptb_app.bot.set_webhook(url=webhook_url)
+    print(f"✅ Webhook configurado en: {webhook_url}")
+
+@app.on_event("shutdown")
+async def shutdown():
+    """Limpiar recursos al cerrar la aplicación"""
+    await ptb_app.stop()
+    await ptb_app.shutdown()
+    print("🛑 Bot detenido")
+
+@app.post(f"/webhook/{TOKEN}")
+async def telegram_webhook(request: Request):
+    """
+    Endpoint que recibe las actualizaciones (updates) de Telegram.
+    Este es el webhook que Telegram llamará cada vez que haya un evento.
+    """
+    try:
+        data = await request.json()
+        update = Update.de_json(data, ptb_app.bot)
+        await ptb_app.process_update(update)
+        return {"ok": True}
+    except Exception as e:
+        print(f"Error procesando update: {e}")
+        return {"ok": False, "error": str(e)}
+
+@app.get("/")
+async def root():
+    """Endpoint raíz para verificar que el servidor está corriendo"""
+    return {
+        "status": "running",
+        "bot": "Bot Display",
+        "mode": "webhook"
+    }
+
+@app.get("/health")
+async def health():
+    """Health check para servicios de monitoreo"""
+    return {"status": "healthy", "bot_running": True}
+
 if __name__ == "__main__":
     # Verificar que las variables de entorno estén configuradas
     if not TOKEN:
@@ -130,26 +193,13 @@ if __name__ == "__main__":
     if not WEBHOOK_URL:
         raise ValueError("❌ WEBHOOK_URL no encontrado en el archivo .env")
     
-    print("Iniciando el bot Display con webhook")
-    app = Application.builder().token(TOKEN).build()
-
-    # comandos
-    app.add_handler(CommandHandler("start", start_command))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("area", area_command))
-    app.add_handler(CommandHandler("myarea", myarea_command))
-
-    # mensajes
-    app.add_handler(MessageHandler(filters.TEXT, handle_message))
-
-    # errores
-    app.add_error_handler(error)
-
-    # Configurar y ejecutar webhook
-    print(f"Iniciando webhook en puerto {PORT}...")
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=PORT,
-        url_path=TOKEN,
-        webhook_url=f"{WEBHOOK_URL}/{TOKEN}"
+    print("🚀 Iniciando Bot Display con FastAPI + Webhook")
+    print(f"📡 Puerto: {PORT}")
+    print(f"🌐 Webhook URL: {WEBHOOK_URL}")
+    
+    # Ejecutar el servidor FastAPI
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=PORT
     )
