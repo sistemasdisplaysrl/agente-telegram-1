@@ -26,3 +26,17 @@ Es importante destacar que el bot también verifica que el usuario haya configur
 ![](../images/Telegram_uhn1WvcUST.png)
 
 Una vez validado el registro en la base de datos, el sistema determina automáticamente el área correspondiente al usuario, más específicamente, el manual asociado a dicha área. A partir de esta asignación, el usuario queda habilitado para interactuar con el bot, realizar consultas y plantear sus inquietudes.
+
+El formato de la solicitud es la siguiente:
+
+```json
+{
+  "question": "cuales son mis responsabilidades?",
+  "area": "sistemas",
+  "top_k": 5
+}
+```
+
+El valor de `area` en este caso se determinará a partir del valor de la columna `cargo` en la tabla vista anteriormente.
+
+
