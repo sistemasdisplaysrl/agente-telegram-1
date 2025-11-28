@@ -254,10 +254,12 @@ async def startup():
     await ptb_app.initialize()
     await ptb_app.start()
     
-    # Configurar el webhook en Telegram
-    webhook_url = f"{WEBHOOK_URL}/webhook/{TOKEN}"
-    await ptb_app.bot.set_webhook(url=webhook_url)
-    print(f"✅ Webhook configurado en: {webhook_url}")
+    # EL WEBHOOK YA NO SE REGISTRA AQUI SINO EN setup_webhook.py
+    # webhook_url = f"{WEBHOOK_URL}/webhook/{TOKEN}"
+    # await ptb_app.bot.set_webhook(url=webhook_url)
+    # print(f"✅ Webhook configurado en: {webhook_url}")
+    
+    print(f"✅ Bot inicializado y listo para recibir webhooks")
 
 @app.on_event("shutdown")
 async def shutdown():
