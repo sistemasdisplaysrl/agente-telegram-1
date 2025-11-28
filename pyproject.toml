@@ -6,6 +6,10 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "aiohttp>=3.13.2",
+    "aiomysql>=0.3.2",
+    "fastapi>=0.121.3",
+    "gunicorn>=23.0.0",
     "python-dotenv>=1.2.1",
-    "python-telegram-bot>=22.5",
+    "python-telegram-bot[webhooks]>=22.5",
+    "uvicorn>=0.38.0",
 ]

@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  telegram-bot:
+    build: .
+    image: telegram-bot-display:0.1
+    container_name: telegram-bot-display
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    ports:
+      - "8443:8443"
+
+    user: "1000:1000"
+
+    # Optional: limit memory/CPU (good for production)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "2"
+    #       memory: "512m"
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8443/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    networks:
+      - rag-net
+
+networks:
+  rag-net:
+    external: true
