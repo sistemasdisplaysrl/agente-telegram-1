@@ -3,7 +3,7 @@ version: "3.9"
 services:
   telegram-bot:
     build: .
-    image: telegram-bot-display:0.1
+    image: telegram-bot-display:0.1.1
     container_name: telegram-bot-display
     restart: unless-stopped
 

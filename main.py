@@ -22,6 +22,7 @@ BOT_USERNAME: Final = os.getenv('BOT_USERNAME')
 API_URL: Final = os.getenv('API_URL')
 WEBHOOK_URL: Final = os.getenv('WEBHOOK_URL')
 PORT: Final = int(os.getenv('PORT', 8443))
+TOP_K: Final = int(os.getenv('TOP_K', 5))
 
 # Credenciales MySQL
 DB_HOST: Final = os.getenv('DB_HOST')
@@ -161,7 +162,7 @@ async def query_api(question: str, area: str) -> str:
     payload = {
         "question": question,
         "area": area,
-        "top_k": 5
+        "top_k": TOP_K
     }
     
     try:
@@ -260,6 +261,7 @@ async def startup():
     # print(f"✅ Webhook configurado en: {webhook_url}")
     
     print(f"✅ Bot inicializado y listo para recibir webhooks")
+    print(f"⚙️  TOP_K configurado en: {TOP_K}")
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -288,7 +290,8 @@ async def root():
         "status": "running",
         "bot": "Bot Display",
         "mode": "webhook",
-        "database": "MySQL connected"
+        "database": "MySQL connected",
+        "top_k": TOP_K
     }
 
 @app.get("/health")
@@ -298,7 +301,8 @@ async def health():
     return {
         "status": "healthy",
         "bot_running": True,
-        "database": db_status
+        "database": db_status,
+        "top_k": TOP_K
     }
 
 if __name__ == "__main__":
@@ -318,6 +322,7 @@ if __name__ == "__main__":
     print(f"📡 Puerto: {PORT}")
     print(f"🌐 Webhook URL: {WEBHOOK_URL}")
     print(f"🗄️  Base de datos: {DB_NAME}@{DB_HOST}")
+    print(f"⚙️  TOP_K: {TOP_K}")
     
     # Ejecutar el servidor FastAPI
     uvicorn.run(

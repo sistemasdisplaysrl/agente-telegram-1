@@ -61,6 +61,7 @@ ENV PATH="/app/.venv/bin:$PATH" \
     TOKEN="" \
     BOT_USERNAME="" \
     API_URL="" \
+    TOP_K="" \
     WEBHOOK_URL="" \
     PORT=8443 \
     # MySQL
